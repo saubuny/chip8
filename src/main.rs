@@ -1,5 +1,5 @@
 use chip8::run;
 
 fn main() {
-    run().unwrap();
+    let _ = pollster::block_on(run());
 }
