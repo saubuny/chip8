@@ -99,13 +99,17 @@ impl State {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
+        // Builds a command buffer to send to the GPU
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
 
+        // Must be in block as encoder is borrowed mutably and the reference needs to be dropped
+        // afterwards
         {
+            // Contains the methods for drawing
             let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -127,6 +131,7 @@ impl State {
             });
         }
 
+        // Finish command buffer and send to GPU
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
@@ -145,7 +150,6 @@ pub async fn run() -> Result<(), impl std::error::Error> {
 
     let mut state = State::new(window).await;
 
-    // Window does not appear until drawn to
     event_loop.run(move |event, elwt| {
         println!("{event:?}");
 
@@ -156,6 +160,12 @@ pub async fn run() -> Result<(), impl std::error::Error> {
                         WindowEvent::CloseRequested => elwt.exit(),
                         WindowEvent::RedrawRequested => {
                             state.window.pre_present_notify();
+                            state.update();
+                            match state.render() {
+                                Ok(_) => {}
+                                Err(wgpu::SurfaceError::OutOfMemory) => elwt.exit(),
+                                Err(e) => eprintln!("{:?}", e),
+                            }
                         }
                         _ => (),
                     }
