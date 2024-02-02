@@ -80,20 +80,57 @@ impl State {
         &self.window
     }
 
-    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        todo!()
-    }
+    // fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    //     todo!()
+    // }
 
     fn input(&mut self, event: &WindowEvent) -> bool {
-        todo!()
+        false
     }
 
     fn update(&mut self) {
-        todo!()
+        // todo!()
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        todo!()
+        let output = self.surface.get_current_texture()?;
+
+        let view = output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
+
+        {
+            let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.1,
+                            g: 0.2,
+                            b: 0.3,
+                            a: 1.0,
+                        }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+        }
+
+        self.queue.submit(std::iter::once(encoder.finish()));
+        output.present();
+
+        Ok(())
     }
 }
 
@@ -106,7 +143,7 @@ pub async fn run() -> Result<(), impl std::error::Error> {
         .build(&event_loop)
         .unwrap();
 
-    let state = State::new(window).await;
+    let mut state = State::new(window).await;
 
     // Window does not appear until drawn to
     event_loop.run(move |event, elwt| {
@@ -114,12 +151,14 @@ pub async fn run() -> Result<(), impl std::error::Error> {
 
         match event {
             Event::WindowEvent { event, window_id } if window_id == state.window.id() => {
-                match event {
-                    WindowEvent::CloseRequested => elwt.exit(),
-                    WindowEvent::RedrawRequested => {
-                        state.window.pre_present_notify();
+                if !state.input(&event) {
+                    match event {
+                        WindowEvent::CloseRequested => elwt.exit(),
+                        WindowEvent::RedrawRequested => {
+                            state.window.pre_present_notify();
+                        }
+                        _ => (),
                     }
-                    _ => (),
                 }
             }
             Event::AboutToWait => {
