@@ -1,6 +1,7 @@
 use winit::{
     event::{Event, WindowEvent},
     event_loop::EventLoop,
+    platform::wayland::WindowBuilderExtWayland,
     window::{Window, WindowBuilder},
 };
 
@@ -11,6 +12,7 @@ struct State {
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
     window: Window,
+    clear_color: wgpu::Color,
 }
 
 impl State {
@@ -66,6 +68,8 @@ impl State {
 
         surface.configure(&device, &config);
 
+        let clear_color = wgpu::Color::BLACK;
+
         Self {
             window,
             surface,
@@ -73,6 +77,7 @@ impl State {
             queue,
             config,
             size,
+            clear_color,
         }
     }
 
@@ -84,8 +89,11 @@ impl State {
     //     todo!()
     // }
 
+    // Return value indicates whether an event has been fully processed
     fn input(&mut self, event: &WindowEvent) -> bool {
-        false
+        match event {
+            _ => false,
+        }
     }
 
     fn update(&mut self) {
@@ -116,12 +124,7 @@ impl State {
                     view: &view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(self.clear_color),
                         store: wgpu::StoreOp::Store,
                     },
                 })],
@@ -145,16 +148,18 @@ pub async fn run() -> Result<(), impl std::error::Error> {
     let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new()
         .with_title("chip8")
+        .with_name("chip8", "chip8")
+        .with_resizable(false)
         .build(&event_loop)
         .unwrap();
 
     let mut state = State::new(window).await;
 
     event_loop.run(move |event, elwt| {
-        println!("{event:?}");
+        // println!("{event:?}");
 
         match event {
-            Event::WindowEvent { event, window_id } if window_id == state.window.id() => {
+            Event::WindowEvent { event, window_id } if window_id == state.window().id() => {
                 if !state.input(&event) {
                     match event {
                         WindowEvent::CloseRequested => elwt.exit(),
