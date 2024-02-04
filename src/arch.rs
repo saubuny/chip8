@@ -1,8 +1,11 @@
+pub const D_WIDTH: usize = 64;
+pub const D_HEIGHT: usize = 32;
+
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Chip8 {
     ram: [u8; 4096],
-    display: [[u8; 64]; 32],
+    display: [[u8; D_WIDTH]; D_HEIGHT],
     pc: u8,
     index: u16,
     stack: Vec<u16>,
