@@ -1,11 +1,14 @@
-pub const D_WIDTH: usize = 64;
-pub const D_HEIGHT: usize = 32;
+pub const WIDTH: usize = 64;
+pub const HEIGHT: usize = 32;
+
+const PIXEL_SIZE: f32 = 16.;
+const RESOLUTION: (f32, f32) = (PIXEL_SIZE * WIDTH as f32, PIXEL_SIZE * HEIGHT as f32);
 
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Chip8 {
     ram: [u8; 4096],
-    display: [[u8; D_WIDTH]; D_HEIGHT],
+    display: [[u8; WIDTH]; HEIGHT],
     pc: u8,
     index: u16,
     stack: Vec<u16>,

@@ -1,5 +1,10 @@
-use chip8::wgpu::run;
+use macroquad::prelude::*;
 
-fn main() {
-    let _ = pollster::block_on(run());
+#[macroquad::main("chip8")]
+async fn main() {
+    loop {
+        clear_background(RED);
+
+        next_frame().await;
+    }
 }
