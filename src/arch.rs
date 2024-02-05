@@ -7,7 +7,7 @@ pub const PIXEL_SIZE: i32 = 16;
 pub struct Chip8 {
     pub ram: [u8; 4096],
     display: [[u8; 32]; 64],
-    pub pc: u8,
+    pub pc: usize,
     index: u16,
     stack: Vec<u16>,
     pub delay_timer: u8,
@@ -31,14 +31,9 @@ pub struct Chip8 {
 
 impl Chip8 {
     pub fn new() -> Self {
-        let mut display = [[0; 32]; 64];
-        for i in display.iter_mut().flat_map(|r| r.iter_mut()) {
-            *i = rand::gen_range(0, 2);
-        }
-
         Chip8 {
             ram: [0; 4096],
-            display,
+            display: [[0; 32]; 64],
             pc: 0,
             index: 0,
             stack: vec![],
@@ -62,20 +57,39 @@ impl Chip8 {
         }
     }
 
+    // Sets values according to rom
+    pub fn read_rom(&mut self) {
+        // Read file
+        // include_str!("../roms/ibm_logo.ch8");
+        //
+    }
+
     // Clear Screen
-    pub fn _00e0(&mut self) {}
+    pub fn _00e0(&mut self) {
+        for i in self.display.iter_mut().flat_map(|r| r.iter_mut()) {
+            *i = 0;
+        }
+    }
 
     // Jump
-    pub fn _1nnn(&mut self) {}
+    pub fn _1nnn(&mut self, nnn: u16) {
+        todo!()
+    }
 
     // Set Register VX
-    pub fn _6xnn(&mut self) {}
+    pub fn _6xnn(&mut self, nn: u8) {
+        todo!()
+    }
 
     // Add to Register VX
-    pub fn _7xnn(&mut self) {}
+    pub fn _7xnn(&mut self, nn: u8) {
+        todo!()
+    }
 
     // Set Index Register I
-    pub fn _annn(&mut self) {}
+    pub fn _annn(&mut self, nnn: u16) {
+        todo!()
+    }
 
     // Display
     pub fn _dxyn(&mut self) {
