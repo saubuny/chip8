@@ -16,6 +16,7 @@ pub struct Chip8 {
     v1: u8,
     v2: u8,
     v3: u8,
+    v4: u8,
     v5: u8,
     v6: u8,
     v7: u8,
@@ -43,6 +44,7 @@ impl Chip8 {
             v1: 0,
             v2: 0,
             v3: 0,
+            v4: 0,
             v5: 0,
             v6: 0,
             v7: 0,
@@ -59,6 +61,30 @@ impl Chip8 {
 
     pub fn read_rom(&mut self) {
         todo!()
+    }
+
+    // Fetches the v register denoted by the second or third nibble
+    // This hurts me for some reason
+    fn getv(&mut self, n: u8) -> Result<&mut u8, &'static str> {
+        match n {
+            0x0 => Ok(&mut self.v0),
+            0x1 => Ok(&mut self.v1),
+            0x2 => Ok(&mut self.v2),
+            0x3 => Ok(&mut self.v3),
+            0x4 => Ok(&mut self.v4),
+            0x5 => Ok(&mut self.v5),
+            0x6 => Ok(&mut self.v6),
+            0x7 => Ok(&mut self.v7),
+            0x8 => Ok(&mut self.v8),
+            0x9 => Ok(&mut self.v9),
+            0xA => Ok(&mut self.va),
+            0xB => Ok(&mut self.vb),
+            0xC => Ok(&mut self.vc),
+            0xD => Ok(&mut self.vd),
+            0xE => Ok(&mut self.ve),
+            0xF => Ok(&mut self.vf),
+            _ => Err("[Error] Invalid Variable Register"),
+        }
     }
 
     pub fn decode_instruction(&mut self) {
@@ -81,10 +107,18 @@ impl Chip8 {
             0x0 => {
                 self._00e0();
             }
-            0x1 => {}
-            0x6 => {}
-            0x7 => {}
-            0xA => {}
+            0x1 => {
+                self._1nnn(nnn);
+            }
+            0x6 => {
+                self._6xnn(nibble2, instr2);
+            }
+            0x7 => {
+                self._6xnn(nibble2, instr2);
+            }
+            0xA => {
+                self._annn(nnn);
+            }
             0xD => {
                 self._dxyn();
             }
@@ -115,13 +149,14 @@ impl Chip8 {
     }
 
     // Set Register VX (pass the register in directly)
-    pub fn _6xnn(&mut self, x: &mut u8, nn: u8) {
-        *x = nn;
+    // I HOPE THIS WORKS
+    pub fn _6xnn(&mut self, x: u8, nn: u8) {
+        *self.getv(x).unwrap() = nn;
     }
 
     // Add to Register VX
-    pub fn _7xnn(&mut self, x: &mut u8, nn: u8) {
-        *x += nn;
+    pub fn _7xnn(&mut self, x: u8, nn: u8) {
+        *self.getv(x).unwrap() += nn;
     }
 
     // Set Index Register I
