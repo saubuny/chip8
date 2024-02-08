@@ -1,4 +1,4 @@
-use macroquad::{prelude::*, rand};
+use macroquad::prelude::*;
 
 pub const PIXEL_SIZE: i32 = 16;
 
@@ -57,11 +57,49 @@ impl Chip8 {
         }
     }
 
-    // Sets values according to rom
     pub fn read_rom(&mut self) {
-        // Read file
-        // include_str!("../roms/ibm_logo.ch8");
-        //
+        todo!()
+    }
+
+    pub fn decode_instruction(&mut self) {
+        let instr1 = self.ram[self.pc];
+        let instr2 = self.ram[self.pc + 1];
+
+        self.pc += 2;
+
+        // I dont know how this bit manipulation works, I'll look into it later
+        // instead of stealing off of stack overflow.
+        let nibble1 = instr1 >> 4;
+        let nibble2 = instr1 & 0xF;
+        let nibble3 = instr2 >> 4;
+        let nibble4 = instr2 & 0xF;
+
+        // Combine nibbles 2-4 for a 12-bit number
+        let nnn: u16 = ((nibble2 << 8) | (nibble3) | (nibble4 << 4)).into();
+
+        match nibble1 {
+            0x0 => {
+                self._00e0();
+            }
+            0x1 => {}
+            0x6 => {}
+            0x7 => {}
+            0xA => {}
+            0xD => {
+                self._dxyn();
+            }
+            _ => (),
+        }
+    }
+
+    pub fn update_timers(&mut self) {
+        if self.delay_timer != 0 {
+            self.delay_timer -= 1;
+        }
+
+        if self.sound_timer != 0 {
+            self.sound_timer -= 1;
+        }
     }
 
     // Clear Screen
@@ -73,22 +111,22 @@ impl Chip8 {
 
     // Jump
     pub fn _1nnn(&mut self, nnn: u16) {
-        todo!()
+        self.pc = nnn as usize;
     }
 
-    // Set Register VX
-    pub fn _6xnn(&mut self, nn: u8) {
-        todo!()
+    // Set Register VX (pass the register in directly)
+    pub fn _6xnn(&mut self, x: &mut u8, nn: u8) {
+        *x = nn;
     }
 
     // Add to Register VX
-    pub fn _7xnn(&mut self, nn: u8) {
-        todo!()
+    pub fn _7xnn(&mut self, x: &mut u8, nn: u8) {
+        *x += nn;
     }
 
     // Set Index Register I
     pub fn _annn(&mut self, nnn: u16) {
-        todo!()
+        self.index = nnn;
     }
 
     // Display
