@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use std::fs;
 
 pub const PIXEL_SIZE: i32 = 16;
 
@@ -59,8 +60,12 @@ impl Chip8 {
         }
     }
 
+    // Read bytes and put into ram
     pub fn read_rom(&mut self) {
-        todo!()
+        let rom = fs::read("roms/ibm_logo.ch8").unwrap();
+        for byte in rom {
+            println!("{:#x}", byte);
+        }
     }
 
     // Fetches the v register denoted by the second or third nibble
@@ -91,6 +96,9 @@ impl Chip8 {
         let instr1 = self.ram[self.pc];
         let instr2 = self.ram[self.pc + 1];
 
+        // Does not work
+        let full_instr: u16 = ((instr1 << 4) | instr2).into();
+
         self.pc += 2;
 
         // I dont know how this bit manipulation works, I'll look into it later
@@ -101,7 +109,7 @@ impl Chip8 {
         let nibble4 = instr2 & 0xF;
 
         // Combine nibbles 2-4 for a 12-bit number
-        let nnn: u16 = ((nibble2 << 8) | (nibble3) | (nibble4 << 4)).into();
+        let nnn: u16 = full_instr & 0x0FFF;
 
         match nibble1 {
             0x0 => {

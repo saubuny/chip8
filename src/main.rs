@@ -16,16 +16,18 @@ async fn main() {
     let mut chip8 = Chip8::new();
 
     // Runs at 60fps by default
-    loop {
-        chip8.update_timers();
+    // loop {
+    //     chip8.update_timers();
+    //
+    //     // ~8-12 instructions per frame
+    //     for _ in 0..8 {
+    //         chip8.decode_instruction();
+    //     }
+    //
+    //     next_frame().await;
+    // }
 
-        // ~8-12 instructions per frame
-        for _ in 0..8 {
-            chip8.decode_instruction();
-        }
-
-        next_frame().await;
-    }
+    chip8.read_rom()
 }
 
 // X: The second nibble. Used to look up one of the 16 registers (VX) from V0 through VF.
