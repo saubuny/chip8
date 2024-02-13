@@ -11,23 +11,38 @@ fn window_conf() -> Conf {
     }
 }
 
+#[allow(dead_code)]
+enum State {
+    Menu,
+    Game,
+}
+
 #[macroquad::main(window_conf)]
 async fn main() {
-    // let mut chip8 = Chip8::new();
+    let mut state = State::Menu;
+    let mut chip8 = Chip8::new();
 
     // Runs at 60fps by default
-    // loop {
-    //     chip8.update_timers();
-    //
-    //     // ~8-12 instructions per frame
-    //     for _ in 0..8 {
-    //         chip8.decode_instruction();
-    //     }
-    //
-    //     next_frame().await;
-    // }
+    loop {
+        match state {
+            State::Menu => {
+                // TODO: Create a menu for selecting roms
+                // Exit back to menu with Esc key
+                chip8.read_rom("roms/ibm_logo.ch8");
+                state = State::Game;
+            }
+            State::Game => {
+                chip8.update_timers();
 
-    // chip8.read_rom()
+                // ~8-12 instructions per frame
+                // for _ in 0..8 {
+                chip8.decode_instruction();
+                // }
+            }
+        }
+
+        next_frame().await;
+    }
 }
 
 // X: The second nibble. Used to look up one of the 16 registers (VX) from V0 through VF.

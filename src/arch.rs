@@ -33,51 +33,53 @@ impl Chip8 {
     }
 
     // Read bytes and put into ram
-    pub fn read_rom(&mut self) {
-        let rom = fs::read("roms/ibm_logo.ch8").unwrap();
+    pub fn read_rom(&mut self, path: &str) {
+        let rom = fs::read(path).unwrap();
+        let index: usize = 0x200;
         for byte in rom {
-            println!("{:#x}", byte);
+            // println!("{:#x}", byte);
+            self.ram[index] = byte;
         }
     }
 
     pub fn decode_instruction(&mut self) {
         let instr1 = self.ram[self.pc];
         let instr2 = self.ram[self.pc + 1];
-
         self.opcode = Some(instr1 as u16 * 256 + instr2 as u16);
-
         self.pc += 2;
 
-        // I dont know how this bit manipulation works, I'll look into it later
-        // instead of stealing off of stack overflow.
-        let nibble1 = instr1 >> 4;
-        let nibble2 = instr1 & 0xF;
-        let nibble3 = instr2 >> 4;
-        let nibble4 = instr2 & 0xF;
+        let n1 = instr1 >> 4;
+        let n2 = instr1 & 0xF;
+        let n3 = instr2 >> 4;
+        let n4 = instr2 & 0xF;
 
-        // Combine nibbles 2-4 for a 12-bit number
         let nnn: u16 = self.opcode.unwrap() & 0x0FFF;
 
-        match nibble1 {
+        match n1 {
             0x0 => {
-                self._00e0();
+                if self.opcode.unwrap() == 0x00e0 {
+                    self._00e0();
+                }
             }
             0x1 => {
                 self._1nnn(nnn);
             }
             0x6 => {
-                self._6xnn(nibble2 as usize, instr2 as u8);
+                self._6xnn(n2 as usize, instr2 as u8);
             }
             0x7 => {
-                self._6xnn(nibble2 as usize, instr2 as u8);
+                self._6xnn(n2 as usize, instr2 as u8);
             }
             0xA => {
                 self._annn(nnn);
             }
             0xD => {
-                self._dxyn();
+                self._dxyn(n2, n3, n4);
             }
-            _ => (),
+            _ => println!(
+                "[Warning] Opcode {:#x} not implemented",
+                self.opcode.unwrap()
+            ),
         }
     }
 
@@ -119,9 +121,7 @@ impl Chip8 {
     }
 
     // Display
-    pub fn _dxyn(&mut self) {
-        clear_background(BLACK);
-
+    pub fn _dxyn(&mut self, _x: u8, _y: u8, _n: u8) {
         for (i, row) in self.display.iter_mut().enumerate() {
             for (j, col) in row.iter_mut().enumerate() {
                 if *col == 1 {
