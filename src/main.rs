@@ -13,7 +13,7 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut chip8 = Chip8::new();
+    // let mut chip8 = Chip8::new();
 
     // Runs at 60fps by default
     // loop {
@@ -27,7 +27,7 @@ async fn main() {
     //     next_frame().await;
     // }
 
-    chip8.read_rom()
+    // chip8.read_rom()
 }
 
 // X: The second nibble. Used to look up one of the 16 registers (VX) from V0 through VF.

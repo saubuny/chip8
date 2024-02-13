@@ -6,34 +6,21 @@ pub const PIXEL_SIZE: i32 = 16;
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Chip8 {
+    pub opcode: Option<u16>,
     pub ram: [u8; 4096],
     display: [[u8; 32]; 64],
     pub pc: usize,
     index: u16,
-    stack: Vec<u16>,
+    pub stack: Vec<u16>,
     pub delay_timer: u8,
     pub sound_timer: u8,
-    v0: u8,
-    v1: u8,
-    v2: u8,
-    v3: u8,
-    v4: u8,
-    v5: u8,
-    v6: u8,
-    v7: u8,
-    v8: u8,
-    v9: u8,
-    va: u8,
-    vb: u8,
-    vc: u8,
-    vd: u8,
-    ve: u8,
-    vf: u8,
+    registers: [u8; 16],
 }
 
 impl Chip8 {
     pub fn new() -> Self {
         Chip8 {
+            opcode: None,
             ram: [0; 4096],
             display: [[0; 32]; 64],
             pc: 0,
@@ -41,22 +28,7 @@ impl Chip8 {
             stack: vec![],
             delay_timer: 0,
             sound_timer: 0,
-            v0: 0,
-            v1: 0,
-            v2: 0,
-            v3: 0,
-            v4: 0,
-            v5: 0,
-            v6: 0,
-            v7: 0,
-            v8: 0,
-            v9: 0,
-            va: 0,
-            vb: 0,
-            vc: 0,
-            vd: 0,
-            ve: 0,
-            vf: 0,
+            registers: [0; 16],
         }
     }
 
@@ -68,36 +40,11 @@ impl Chip8 {
         }
     }
 
-    // Fetches the v register denoted by the second or third nibble
-    // This hurts me for some reason
-    fn getv(&mut self, n: u8) -> Result<&mut u8, &'static str> {
-        match n {
-            0x0 => Ok(&mut self.v0),
-            0x1 => Ok(&mut self.v1),
-            0x2 => Ok(&mut self.v2),
-            0x3 => Ok(&mut self.v3),
-            0x4 => Ok(&mut self.v4),
-            0x5 => Ok(&mut self.v5),
-            0x6 => Ok(&mut self.v6),
-            0x7 => Ok(&mut self.v7),
-            0x8 => Ok(&mut self.v8),
-            0x9 => Ok(&mut self.v9),
-            0xA => Ok(&mut self.va),
-            0xB => Ok(&mut self.vb),
-            0xC => Ok(&mut self.vc),
-            0xD => Ok(&mut self.vd),
-            0xE => Ok(&mut self.ve),
-            0xF => Ok(&mut self.vf),
-            _ => Err("[Error] Invalid Variable Register"),
-        }
-    }
-
     pub fn decode_instruction(&mut self) {
         let instr1 = self.ram[self.pc];
         let instr2 = self.ram[self.pc + 1];
 
-        // Does not work
-        let full_instr: u16 = ((instr1 << 4) | instr2).into();
+        self.opcode = Some(instr1 as u16 * 256 + instr2 as u16);
 
         self.pc += 2;
 
@@ -109,7 +56,7 @@ impl Chip8 {
         let nibble4 = instr2 & 0xF;
 
         // Combine nibbles 2-4 for a 12-bit number
-        let nnn: u16 = full_instr & 0x0FFF;
+        let nnn: u16 = self.opcode.unwrap() & 0x0FFF;
 
         match nibble1 {
             0x0 => {
@@ -119,10 +66,10 @@ impl Chip8 {
                 self._1nnn(nnn);
             }
             0x6 => {
-                self._6xnn(nibble2, instr2);
+                self._6xnn(nibble2 as usize, instr2 as u8);
             }
             0x7 => {
-                self._6xnn(nibble2, instr2);
+                self._6xnn(nibble2 as usize, instr2 as u8);
             }
             0xA => {
                 self._annn(nnn);
@@ -156,15 +103,14 @@ impl Chip8 {
         self.pc = nnn as usize;
     }
 
-    // Set Register VX (pass the register in directly)
-    // I HOPE THIS WORKS
-    pub fn _6xnn(&mut self, x: u8, nn: u8) {
-        *self.getv(x).unwrap() = nn;
+    // Set Register VX
+    pub fn _6xnn(&mut self, x: usize, nn: u8) {
+        self.registers[x] = nn;
     }
 
     // Add to Register VX
-    pub fn _7xnn(&mut self, x: u8, nn: u8) {
-        *self.getv(x).unwrap() += nn;
+    pub fn _7xnn(&mut self, x: usize, nn: u8) {
+        self.registers[x] += nn;
     }
 
     // Set Index Register I
