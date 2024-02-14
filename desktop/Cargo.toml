@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 chip8_core = { path = "../chip8_core" }
+macroquad = "0.4.4"
  
