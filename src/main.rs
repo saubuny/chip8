@@ -37,6 +37,21 @@ async fn main() {
                 // ~8-12 instructions per frame
                 // for _ in 0..8 {
                 chip8.decode_instruction();
+
+                // Actually draw to screen
+                for (i, row) in chip8.display.iter_mut().enumerate() {
+                    for (j, col) in row.iter_mut().enumerate() {
+                        if *col == 1 {
+                            draw_rectangle(
+                                i as f32 * PIXEL_SIZE as f32,
+                                j as f32 * PIXEL_SIZE as f32,
+                                PIXEL_SIZE as f32,
+                                PIXEL_SIZE as f32,
+                                WHITE,
+                            )
+                        }
+                    }
+                }
                 // }
             }
         }

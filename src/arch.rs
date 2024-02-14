@@ -3,27 +3,45 @@ use std::fs;
 
 pub const PIXEL_SIZE: i32 = 16;
 
+// TODO: Keypad
+
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct Chip8 {
-    pub opcode: Option<u16>,
-    pub ram: [u8; 4096],
-    display: [[u8; 32]; 64],
-    pub pc: usize,
+    opcode: Option<u16>,
+    ram: [u8; 4096],
+    pub display: [[u8; 32]; 64],
+    pc: usize,
     index: u16,
-    pub stack: Vec<u16>,
-    pub delay_timer: u8,
-    pub sound_timer: u8,
+    stack: Vec<u16>,
+    delay_timer: u8,
+    sound_timer: u8,
     registers: [u8; 16],
 }
 
 impl Chip8 {
     pub fn new() -> Self {
+        // Init font
+        let mut ram = [0; 4096];
+        let font: [u8; 80] = [
+            0xF0, 0x90, 0x90, 0x90, 0xF0, 0x20, 0x60, 0x20, 0x20, 0x70, 0xF0, 0x10, 0xF0, 0x80,
+            0xF0, 0xF0, 0x10, 0xF0, 0x10, 0xF0, 0x90, 0x90, 0xF0, 0x10, 0x10, 0xF0, 0x80, 0xF0,
+            0x10, 0xF0, 0xF0, 0x80, 0xF0, 0x90, 0xF0, 0xF0, 0x10, 0x20, 0x40, 0x40, 0xF0, 0x90,
+            0xF0, 0x90, 0xF0, 0xF0, 0x90, 0xF0, 0x10, 0xF0, 0xF0, 0x90, 0xF0, 0x90, 0x90, 0xE0,
+            0x90, 0xE0, 0x90, 0xE0, 0xF0, 0x80, 0x80, 0x80, 0xF0, 0xE0, 0x90, 0x90, 0x90, 0xE0,
+            0xF0, 0x80, 0xF0, 0x80, 0xF0, 0xF0, 0x80, 0xF0, 0x80, 0x80,
+        ];
+        let mut ram_idx = 0x50;
+        for font_idx in 0..80 {
+            ram[ram_idx] = font[font_idx];
+            ram_idx += 1;
+        }
+
         Chip8 {
             opcode: None,
-            ram: [0; 4096],
             display: [[0; 32]; 64],
             pc: 0,
+            ram,
             index: 0,
             stack: vec![],
             delay_timer: 0,
@@ -65,16 +83,16 @@ impl Chip8 {
                 self._1nnn(nnn);
             }
             0x6 => {
-                self._6xnn(n2 as usize, instr2 as u8);
+                self._6xnn(n2.into(), instr2.into());
             }
             0x7 => {
-                self._6xnn(n2 as usize, instr2 as u8);
+                self._6xnn(n2.into(), instr2.into());
             }
             0xA => {
                 self._annn(nnn);
             }
             0xD => {
-                self._dxyn(n2, n3, n4);
+                self._dxyn(n2.into(), n3.into(), n4);
             }
             _ => println!(
                 "[Warning] Opcode {:#x} not implemented",
@@ -121,19 +139,31 @@ impl Chip8 {
     }
 
     // Display
-    pub fn _dxyn(&mut self, _x: u8, _y: u8, _n: u8) {
-        for (i, row) in self.display.iter_mut().enumerate() {
-            for (j, col) in row.iter_mut().enumerate() {
-                if *col == 1 {
-                    draw_rectangle(
-                        i as f32 * PIXEL_SIZE as f32,
-                        j as f32 * PIXEL_SIZE as f32,
-                        PIXEL_SIZE as f32,
-                        PIXEL_SIZE as f32,
-                        WHITE,
-                    )
-                }
+    pub fn _dxyn(&mut self, x: usize, y: usize, n: u8) {
+        // Prevent wrapping
+        let mut x: usize = (self.registers[x] % 64).into();
+        let mut y: usize = (self.registers[y] % 32).into();
+        self.registers[0xF] = 0;
+
+        for i in 0..n {
+            let data = self.ram[self.index as usize + i as usize];
+
+            for bit in 0..8 {
+                let bit = data & (1 << (8 - bit));
+                if bit != 0 {
+                    match self.display[x][y] {
+                        0 => self.display[x][y] = 1,
+                        1 => {
+                            self.display[x][y] = 0;
+                            self.registers[0xF] = 1;
+                        }
+                        _ => (),
+                    }
+                };
+                x += 1;
             }
+
+            y += 1;
         }
     }
 }
