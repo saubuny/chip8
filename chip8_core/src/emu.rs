@@ -200,12 +200,12 @@ impl Emu {
 
             // Draw Sprite
             (0xD, _, _, _) => {
-                let x = self.v_reg[x] as u16;
-                let y = self.v_reg[y] as u16;
-                let rows = n4;
+                let vx = self.v_reg[x] as u16;
+                let vy = self.v_reg[y] as u16;
+                let row_count = n4;
                 let mut flipped = false;
 
-                for row in 0..rows {
+                for row in 0..row_count {
                     let addr = self.i_reg + row as u16;
                     let pixels = self.ram[addr as usize];
 
@@ -213,8 +213,8 @@ impl Emu {
                         // Gets current pixels bit via mask
                         if (pixels & (0b1000_0000 >> col)) != 0 {
                             // Wrapping
-                            let x = (x + row) as usize % SCREEN_WIDTH;
-                            let y = (y + col) as usize % SCREEN_HEIGHT;
+                            let x = (vx + col) as usize % SCREEN_WIDTH;
+                            let y = (vy + row) as usize % SCREEN_HEIGHT;
 
                             let index = x + SCREEN_WIDTH * y;
                             flipped |= self.screen[index];
@@ -278,7 +278,7 @@ impl Emu {
             }
 
             // Set i to font addr
-            (0xF, _, 2, 9) => self.i_reg = self.v_reg[x] as u16 * 5,
+            (0xF, _, 2, 9) => self.i_reg = (self.v_reg[x] as u16) * 5,
 
             // Store BCD of v[x]
             // TODO: Research BCD and use a more efficient algorithm
