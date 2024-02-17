@@ -194,6 +194,119 @@ impl Emu {
             // v[x] = rand() & nn
             (0xC, _, _, _) => self.v_reg[x] = random::<u8>() & nn,
 
+            // Draw Sprite
+            (0xD, _, _, _) => {
+                let x = self.v_reg[x] as u16;
+                let y = self.v_reg[y] as u16;
+                let rows = n4;
+                let mut flipped = false;
+
+                for row in 0..rows {
+                    let addr = self.i_reg + row as u16;
+                    let pixels = self.ram[addr as usize];
+
+                    for col in 0..8 {
+                        // Gets current pixels bit via mask
+                        if (pixels & (0b1000_0000 >> col)) != 0 {
+                            // Wrapping
+                            let x = (x + row) as usize % SCREEN_WIDTH;
+                            let y = (y + col) as usize % SCREEN_HEIGHT;
+
+                            let index = x + SCREEN_WIDTH * y;
+                            flipped |= self.screen[index];
+                            self.screen[index] ^= true;
+                        }
+                    }
+                }
+
+                if flipped {
+                    self.v_reg[0xF] = 1;
+                } else {
+                    self.v_reg[0xF] = 0;
+                }
+            }
+
+            // Skip if key pressed
+            (0xE, _, 9, 0xE) => {
+                let vx = self.v_reg[x] as usize;
+                if self.keys[vx] {
+                    self.pc += 2;
+                }
+            }
+
+            // Skip if not key pressed
+            (0xE, _, 0xA, 1) => {
+                let vx = self.v_reg[x] as usize;
+                if self.keys[vx] {
+                    self.pc += 2;
+                }
+            }
+
+            // v[x] = dt
+            (0xF, _, 0, 7) => self.v_reg[x] = self.dt,
+
+            // Wait for key pressed
+            (0xF, _, 0, 0xA) => {
+                let mut pressed = false;
+                for i in 0..self.keys.len() {
+                    if self.keys[i] {
+                        self.v_reg[x] = i as u8;
+                        pressed = true;
+                        break;
+                    }
+                }
+
+                if !pressed {
+                    self.pc -= 2;
+                }
+            }
+
+            // dt = v[x]
+            (0xF, _, 1, 5) => self.dt = self.v_reg[x],
+
+            // st = v[x]
+            (0xF, _, 1, 8) => self.st = self.v_reg[x],
+
+            // i += v[x]
+            (0xF, _, 1, 0xE) => {
+                let vx = self.v_reg[x] as u16;
+                self.i_reg = self.i_reg.wrapping_add(vx);
+            }
+
+            // Set i to font addr
+            (0xF, _, 2, 9) => self.i_reg = self.v_reg[x] as u16 * 5,
+
+            // Store BCD of v[x]
+            // TODO: Research BCD and use a more efficient algorithm
+            (0xF, _, 3, 3) => {
+                let vx = self.v_reg[x] as f32;
+
+                let hundreds = (vx / 100.0).floor() as u8;
+                let tens = ((vx / 10.0) % 10.0).floor() as u8;
+                let ones = (vx % 10.0) as u8;
+
+                let i = self.i_reg as usize;
+                self.ram[i] = hundreds;
+                self.ram[i + 1] = tens;
+                self.ram[i + 2] = ones;
+            }
+
+            // Store v[0]..=v[x] in ram
+            (0xF, _, 5, 5) => {
+                let i = self.i_reg as usize;
+                for index in 0..=x {
+                    self.ram[i + index] = self.v_reg[index];
+                }
+            }
+
+            // Load ram into v[0]..=v[x]
+            (0xF, _, 6, 5) => {
+                let i = self.i_reg as usize;
+                for index in 0..=x {
+                    self.v_reg[index] = self.ram[i + index];
+                }
+            }
+
             (_, _, _, _) => unimplemented!("[Error] Unsupported opcode: {}", op),
         }
     }
@@ -212,5 +325,19 @@ impl Emu {
             self.st -= 1;
         }
         false
+    }
+
+    pub fn get_display(&self) -> &[bool] {
+        &self.screen
+    }
+
+    pub fn keypress(&mut self, index: usize, pressed: bool) {
+        self.keys[index] = pressed;
+    }
+
+    pub fn load(&mut self, data: &[u8]) {
+        let start = START_ADDR as usize;
+        let end = (START_ADDR as usize) + data.len();
+        self.ram[start..end].copy_from_slice(data);
     }
 }
