@@ -36,19 +36,6 @@ fn main() {
     let mut chip8 = Emu::new();
 
     let rom = fs::read(&args[1]).expect("Unable to open file");
-
-    // for i in 0..40 {
-    //     if i % 2 == 0 {
-    //         let higher_byte = rom[i] as u16;
-    //         let lower_byte = rom[i + 1] as u16;
-    //         let opcode = (higher_byte << 8) | lower_byte;
-    //         print!("{:#x} + {:#x}", rom[i], rom[i + 1]);
-    //         print!(" => ");
-    //         print!("{:#x}", opcode);
-    //         println!();
-    //     }
-    // }
-
     chip8.load(&rom);
 
     'gameloop: loop {
@@ -60,6 +47,13 @@ fn main() {
                     ..
                 } => {
                     break 'gameloop;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Backspace),
+                    ..
+                } => {
+                    chip8.reset();
+                    chip8.load(&rom);
                 }
                 Event::KeyDown {
                     keycode: Some(key), ..
