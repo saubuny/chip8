@@ -61,11 +61,12 @@ impl Emu {
 
     pub fn tick(&mut self) {
         let opcode = self.fetch();
+        self.execute(opcode);
     }
 
     fn fetch(&mut self) -> u16 {
-        let higher_byte = self.ram[self.stack.sp as usize] as u16;
-        let lower_byte = self.ram[self.stack.sp as usize] as u16;
+        let higher_byte = self.ram[self.pc as usize] as u16;
+        let lower_byte = self.ram[(self.pc + 1) as usize] as u16;
         let opcode = (higher_byte << 8) | lower_byte;
         self.pc += 2;
         opcode
@@ -131,6 +132,9 @@ impl Emu {
 
             // v[x] += nn
             (7, _, _, _) => self.v_reg[x] = self.v_reg[x].wrapping_add(nn),
+
+            // v[x] = v[y]
+            (8, _, _, 0) => self.v_reg[x] = self.v_reg[y],
 
             // Bitwise operations
             (8, _, _, 1) => self.v_reg[x] |= self.v_reg[y],
@@ -307,7 +311,7 @@ impl Emu {
                 }
             }
 
-            (_, _, _, _) => unimplemented!("[Error] Unsupported opcode: {}", op),
+            (_, _, _, _) => unimplemented!("[Error] Unsupported opcode: {:#x}", op),
         }
     }
 
@@ -319,7 +323,6 @@ impl Emu {
 
         if self.st > 0 {
             if self.st == 1 {
-                println!("Reminder to beep...");
                 return true;
             }
             self.st -= 1;
